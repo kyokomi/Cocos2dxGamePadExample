@@ -11,3 +11,6 @@ else
   APP_CPPFLAGS += -DNDEBUG
   APP_OPTIM := release
 endif
+
+NDK_TOOLCHAIN_VERSION=4.9
+

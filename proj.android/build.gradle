@@ -1,0 +1,92 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "21.1.2"
+
+    defaultConfig {
+        applicationId "com.kyokomi.example.gamepad"
+        minSdkVersion 19
+        targetSdkVersion 19
+
+        ndk {
+            moduleName "cocos2dcpp_shared"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            resources.srcDirs = ['src']
+            aidl.srcDirs = ['src']
+            renderscript.srcDirs = ['src']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['assets']
+        }
+    }
+}
+
+dependencies {
+		compile project(':cocos2d:cocos:platform:android:ControllerManualAdapter')
+}
+
+task resourcesCopy(dependsOn: "resourcesClean", type: Copy) {
+    from "../Resources"
+    into "assets"
+}
+
+task resourcesDelete(type: Delete) {
+    delete "assets"
+}
+
+task resourcesClean (dependsOn: "resourcesDelete" ) << {
+    def classesDir = new File("assets")
+    classesDir.mkdirs()
+}
+
+task ndkBuild(type:Exec) {
+    def cpu_num = Runtime.getRuntime().availableProcessors()
+    println "cpu_num=${cpu_num}"
+    commandLine 'ndk-build', "-j${cpu_num}"
+}
+
+task ndkClean(type:Exec) {
+    commandLine 'ndk-build', 'clean'
+}
+
+task libsClean(type: Delete) {
+    delete 'libs/armeabi', 'libs/armeabi-v7a', 'libs/x86', 'libs/mips'
+}
+
+task objClean(type: Delete) {
+    delete 'obj'
+}
+
+if (new File(projectDir, "jni").exists()) {
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn ndkBuild
+    }
+
+
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn resourcesCopy
+    }
+
+    //mod see http://stackoverflow.com/questions/20704812/android-studio-0-4-could-not-find-method-jnidir
+    tasks.withType(com.android.build.gradle.tasks.PackageApplication) {pkgTask ->
+        pkgTask.jniFolders = new HashSet<File>()
+        pkgTask.jniFolders.add(new File(projectDir, 'libs'))
+    }
+
+    clean.dependsOn 'ndkClean'
+    clean.dependsOn 'libsClean'
+    clean.dependsOn 'objClean'
+}

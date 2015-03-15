@@ -164,3 +164,5 @@ tests/cpp-tests/Resources/audio
 /tests/lua-game-controller-test/src/cocos/
 /tests/lua-tests/src/cocos/
 
+.gradle
+build
